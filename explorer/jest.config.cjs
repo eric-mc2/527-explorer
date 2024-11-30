@@ -12,5 +12,6 @@ module.exports = {
     },
     transformIgnorePatterns: [
       '/node_modules/(?!d3|d3-array|d3-shape)/'
-    ]
+    ],
+    testPathIgnorePatterns: ['/dist/'], // Ignore test files in dist/
   };
