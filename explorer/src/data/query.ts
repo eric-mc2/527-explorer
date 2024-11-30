@@ -1,11 +1,8 @@
 import { z } from 'zod';
 
-import {ContributionsSchema,
-    ExpendituresSchema,
-    ContributionMatchesSchema,
-    ExpenditureMatchesSchema,
-    OrganizationsSchema,
-    Response,
+import {containerSchemaFactory, ContainerResponse,
+    matchSchemaFactory, MatchesResponse,
+    AnyElem,MatchElem
 } from './responseSchema';
 
 /* 
@@ -51,28 +48,28 @@ const buildUrl = (route: string, params: Record<string,string>) => {
     return `${corsProxy}?${baseUrl}?${queryString}`;
 }
 
-const parse = (route: string, data: any): Response  => {
-    switch(route) {
-        case "orgs/contributions":
-            return ContributionsSchema.parse(data);
-        case "orgs/expenditures":
-            return ExpendituresSchema.parse(data);
-        case "match/contributions":
-            return ContributionMatchesSchema.parse(data);
-        case "match/expenditures":
-            return ExpenditureMatchesSchema.parse(data);
-        case "search/contributors":
-            return ContributionsSchema.parse(data);
-        case "search/expenditures":
-            return ExpendituresSchema.parse(data);
-        case "search/orgs":
-            return OrganizationsSchema.parse(data);
-        default:
-            throw new Error("Unknown route endpoint.")
-    }
-}
-    
-export async function get(route: string, params: Record<string,string>): Promise<Response> {
+// export async function get<T extends keyof RouteToType>(route: T, params: Record<string,string>): Promise<RouteToType[T]> {
+//     // TODO: Check that all callers properly try/catch Throws!
+//     const url = buildUrl(route, params);
+//     const response = await fetch(url, { method: "GET" });
+//     if (!response.ok) {
+//         throw new Error(`HTTP error! Status: ${response.status}`);
+//     }
+//     const data = await response.json();
+//     const parsed = RouteSchemas[route].parse(data);
+//     // Filter and validate elements against the specific schema
+//     return parsed;
+// }
+
+/*
+This signature is saying get() returns a Container of type T,
+where T is one of the AnyElem union types.
+*/
+export async function get<T extends AnyElem>(
+    route: string, 
+    schema: z.ZodType<T>,
+    params: Record<string,string>
+): Promise<ContainerResponse<T>> {
     // TODO: Check that all callers properly try/catch Throws!
     const url = buildUrl(route, params);
     const response = await fetch(url, { method: "GET" });
@@ -80,11 +77,27 @@ export async function get(route: string, params: Record<string,string>): Promise
         throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    const parsed = parse(route, data);
+    const parsed = containerSchemaFactory(schema).parse(data);
     return parsed;
 }
-  
-  
+
+export async function getMatch<T extends MatchElem>(
+    // TODO: How to combine this with the get()
+    route: string, 
+    schema: z.ZodType<T>,
+    params: Record<string,string>
+): Promise<MatchesResponse<T>> {
+    // TODO: Check that all callers properly try/catch Throws!
+    const url = buildUrl(route, params);
+    const response = await fetch(url, { method: "GET" });
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    const parsed = matchSchemaFactory(schema).parse(data);
+    return parsed;
+}
+
 async function getAll(route: string, params: Record<string, string>) {
     // TODO: Handle pagination.
 }
