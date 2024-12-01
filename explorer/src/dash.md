@@ -17,5 +17,5 @@ const search = view(Inputs.text({label: "Search:", submit: true}));
 
 ```js
 const data = await appSearch(search);
-const tbl = view(Inputs.table(data.data));
+const tbl = view(Inputs.table(data));
 ```

@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 import {type ContainerResponse, ContainerResponseSchema,
     type MatchesResponse, MatchResponseSchema,
 } from './responseSchema.js';
@@ -18,7 +16,15 @@ Top Contributors / Expenses Are returned in the HTML so I'd need to have a backe
 Leadership FWIW there is also a board members search endpoint. But org board members are returned in the HTML.
 */
 
-const endpointUrl = (route: string, params: Record<string,string>) => {
+type Route = "match/expenditures"
+    | "match/contributions"
+    | "orgs/contributions"
+    | "orgs/expenditures"
+    | "search/contributors"
+    | "search/expenditures"
+    | "search/orgs";
+
+const endpointUrl = (route: Route, params: Record<string,string>) => {
     switch(route) {
       case "orgs/contributions":
         return `https://projects.propublica.org/527-explorer/orgs/${params.id}/contribution_details`;
@@ -39,22 +45,7 @@ const endpointUrl = (route: string, params: Record<string,string>) => {
     }
 }
 
-const endpointSchema = (route: string): (typeof ContainerResponseSchema | typeof MatchResponseSchema) => {
-    switch (route) {
-        case "match/expenditures":
-        case "match/contributions":
-            return MatchResponseSchema
-        case "orgs/contributions":
-        case "orgs/expenditures":
-        case "search/contributors":
-        case "search/expenditures":
-        case "search/orgs":
-        default:
-            return ContainerResponseSchema
-    }
-};
-
-const buildUrl = (route: string, params: Record<string,string>) => {
+const buildUrl = (route: Route, params: Record<string,string>) => {
     // TODO: Incorporate query filter params like contribution_amount[]&"1M and above"
     const corsProxy = "https://corsproxy.io/";
     const baseUrl = endpointUrl(route, params);
@@ -62,25 +53,42 @@ const buildUrl = (route: string, params: Record<string,string>) => {
     return `${corsProxy}?${baseUrl}?${queryString}`;
 }
 
-// export async function get<T extends keyof RouteToType>(route: T, params: Record<string,string>): Promise<RouteToType[T]> {
-//     // TODO: Check that all callers properly try/catch Throws!
-//     const url = buildUrl(route, params);
-//     const response = await fetch(url, { method: "GET" });
-//     if (!response.ok) {
-//         throw new Error(`HTTP error! Status: ${response.status}`);
-//     }
-//     const data = await response.json();
-//     const parsed = RouteSchemas[route].parse(data);
-//     // Filter and validate elements against the specific schema
-//     return parsed;
-// }
+const injectKind = (route: Route, data: ContainerResponse | MatchesResponse) => {
+    const kinds = {
+        "orgs/contributions": "contribution",
+        "search/contributors": "contribution",
+        "orgs/expenditures": "expenditure",
+        "search/expenditures": "expenditure",
+        "search/orgs": "organization",
+        "match/expenditures": undefined,
+        "match/contributions": undefined  
+    }
+    const kind = kinds[route];
+    const isContainer = (kind === "contribution") || (kind === "expenditure") || (kind === "organization");
+    if ("data" in data && isContainer) {
+        for (var i = 0; i < data.data.length; i++) {
+            data.data[i]["kind"] = kind;
+        }
+    }
+    return data;
+}
+
+const endpointSchema = {
+    "match/expenditures": MatchResponseSchema,
+    "match/contributions": MatchResponseSchema,
+    "orgs/contributions": ContainerResponseSchema,
+    "orgs/expenditures": ContainerResponseSchema,
+    "search/contributors": ContainerResponseSchema,
+    "search/expenditures": ContainerResponseSchema,
+    "search/orgs": ContainerResponseSchema,
+}
 
 /*
 This signature is saying get() returns a Container of type T,
 where T is one of the AnyElem union types.
 */
 export async function get(
-    route: string, 
+    route: Route, 
     params: Record<string,string>
 ): Promise<ContainerResponse | MatchesResponse> {
     // TODO: Check that all callers properly try/catch Throws!
@@ -89,8 +97,9 @@ export async function get(
     if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    const data = await response.json();
-    const schema = endpointSchema(route);
+    let data = await response.json();
+    data = injectKind(route, data);
+    const schema = endpointSchema[route];
     const parsed = schema.parse(data);
     return parsed;
 }
