@@ -29,6 +29,13 @@ export class Graph {
     nodes: Node[];
     links: Edge[];
 
+    get edges() {
+        return this.links;
+    }    
+    set edges(value: any[]) {
+        this.links = value;
+    }
+
     constructor(nodes: Array<Node> = [], links: Array<Edge>= []) {
         GraphSchema.parse({nodes, links});
         this.nodes = nodes;

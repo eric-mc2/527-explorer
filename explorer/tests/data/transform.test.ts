@@ -1,5 +1,5 @@
 import {orgsToGraph, contribsToGraph, expendToGraph,
-    walkOrg, walkContrib, walkExpend
+    walkOrg, walkPayment, walkToGraph,
 } from "../../src/data/transform";
 
 const orgsResponse = `{"count":1,"data":[{"id":113753369,"org_name":"The Presidential Coalition, LLC","ein":113753369,"total_contrib":77160915,"total_exp":84991865,"active":true,"purpose":"Organized to directly or indirectly accept contributions and/or make expenditures to influence the selection, nomination, election or appointment of individuals to federal, state or local public office, or office in a political organization"}]}`;
@@ -41,13 +41,13 @@ test('walkOrg', async () => {
     const orgs = JSON.parse(orgsResponse);
     const data = await walkOrg(orgs.data[0]);
     expect(data).toBeDefined();
-    expect(data.contributions.data).toHaveLength(10);
-    expect(data.expenditures.data).toHaveLength(10);
+    expect(data.contributions).toHaveLength(10);
+    expect(data.expenditures).toHaveLength(10);
 });
 
 test('walkContrib', async () => {
     const contrib = JSON.parse(contribResponse);
-    const data = await walkContrib(contrib.data[2]);
+    const data = await walkPayment(contrib.data[2]);
     expect(data).toBeDefined();
     expect(data.linked).toHaveLength(1000);
     expect(data.possible).toHaveLength(0);
@@ -55,8 +55,16 @@ test('walkContrib', async () => {
 
 test('walkExpend', async () => {
     const expend = JSON.parse(expendResponse);
-    const data = await walkExpend(expend.data[2]);
+    const data = await walkPayment(expend.data[2]);
     expect(data).toBeDefined();
     expect(data.linked).toHaveLength(239);
     expect(data.possible).toHaveLength(0);
+});
+
+test('walkGraph', async () => {
+    const orgs = JSON.parse(orgsResponse);
+    const data = await walkToGraph(orgs.data[0]);
+    expect(data).toBeDefined();
+    expect(data.nodes).toHaveLength(20);
+    expect(data.links).toHaveLength(19);
 });

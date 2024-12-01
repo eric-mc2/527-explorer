@@ -10,21 +10,14 @@ import { z } from 'zod';
 export type ContributionsElem = z.infer<typeof ContributionElemSchema>;
 export type ExpendituresElem = z.infer<typeof ExpenditureElemSchema>;
 export type OrganizationElem = z.infer<typeof OrganizationElemSchema>;
-export type AnyElem = z.infer<typeof AnyElemSchema>;
-export type ContainerResponse<T extends AnyElem> = z.infer<ReturnType<typeof containerSchemaFactory<z.ZodType<T>>>>;
+export type ContainerResponse = z.infer<typeof ContainerResponseSchema>;
 
 export type ContributionMatchElem = z.infer<typeof ContributionMatchSchema>;
 export type ExpenditureMatchElem = z.infer<typeof ExpenditureMatchSchema>;
-export type MatchElem = z.infer<typeof MatchElemSchema>;
-export type MatchesResponse<T extends MatchElem> = z.infer<ReturnType<typeof matchSchemaFactory<z.ZodType<T>>>>;
-
-const eitherKey = (a: string, b: string, T: any) => {
-  return z.union([
-    z.object({ [a]: T, [b]: z.undefined() }),
-    z.object({ [b]: T, [a]: z.undefined() })]);
-}
+export type MatchesResponse = z.infer<typeof MatchResponseSchema>;
 
 export const OrganizationElemSchema = z.object({
+  kind: z.literal("organization"),
   id: z.coerce.number(),
   org_name: z.string(),
   ein: z.coerce.number(),
@@ -36,6 +29,7 @@ export const OrganizationElemSchema = z.object({
 
 /* Handles search and org contribution endpoints */
 export const ContributionElemSchema = z.object({
+  kind: z.literal("contribution"),
   /* Transaction */
   id: z.number(),
   agg_contrib_ytd: z.coerce.number(),
@@ -55,6 +49,7 @@ export const ContributionElemSchema = z.object({
 
 /* Handles both expenditure endpoints */
 export const ExpenditureElemSchema = z.object({
+    kind: z.literal("expenditure"),
     /* Transaction */
     id: z.number(),
     amt: z.coerce.number(),
@@ -70,17 +65,11 @@ export const ExpenditureElemSchema = z.object({
     recipient: z.number().nullable(),
   })
   
-const AnyElemSchema = z.union([
-    ContributionElemSchema, 
-    OrganizationElemSchema, 
-    ExpenditureElemSchema
-]);
-
-// This is allowing us to create specifically typed versions of the base container.
-export const containerSchemaFactory = <T extends z.ZodType<AnyElem>>(elementSchema: T) => 
-    z.object({
-        count: z.number(),
-        data: z.array(elementSchema),
+export const ContainerResponseSchema = z.object({
+    count: z.number(),
+    data: z.union([z.array(ContributionElemSchema),
+                z.array(OrganizationElemSchema),
+                z.array(ExpenditureElemSchema)])
 });  
 
 export const ContributionMatchSchema = z.object({
@@ -117,14 +106,7 @@ export const ExpenditureMatchSchema = z.object({
   schedule_b_id: z.coerce.number(), // ?
 })
 
-const MatchElemSchema = z.union([
-    ContributionMatchSchema, 
-    ExpenditureMatchSchema
-]);
-
-// This is allowing us to create specifically typed versions of the base container.
-export const matchSchemaFactory = <T extends z.ZodType<MatchElem>>(elementSchema: T) => 
-    z.object({
-        linked: z.array(elementSchema),
-        possible: z.array(elementSchema)
+export const MatchResponseSchema = z.object({
+    linked: z.union([z.array(ExpenditureMatchSchema), z.array(ContributionMatchSchema)]),
+    possible: z.union([z.array(ExpenditureMatchSchema), z.array(ContributionMatchSchema)])
 });

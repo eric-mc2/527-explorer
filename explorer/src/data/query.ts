@@ -1,9 +1,8 @@
 import { z } from 'zod';
 
-import {containerSchemaFactory, ContainerResponse,
-    matchSchemaFactory, MatchesResponse,
-    AnyElem,MatchElem
-} from './responseSchema';
+import {ContainerResponse, ContainerResponseSchema,
+    MatchesResponse, MatchResponseSchema,
+} from './responseSchema.js';
 
 /* 
 Nodes They only expose IDs for tax filer nodes. Even though they cluster the contributors and expenditures, they don't expose IDs for that. They model each line-item with an ID and expose the name/address properties that they do clustering on.
@@ -40,8 +39,23 @@ const endpointUrl = (route: string, params: Record<string,string>) => {
     }
 }
 
+const endpointSchema = (route: string): (typeof ContainerResponseSchema | typeof MatchResponseSchema) => {
+    switch (route) {
+        case "match/expenditures":
+        case "match/contributions":
+            return MatchResponseSchema
+        case "orgs/contributions":
+        case "orgs/expenditures":
+        case "search/contributors":
+        case "search/expenditures":
+        case "search/orgs":
+        default:
+            return ContainerResponseSchema
+    }
+};
+
 const buildUrl = (route: string, params: Record<string,string>) => {
-    // TODO: There are also query filters like contribution_amount[]&"1M and above"
+    // TODO: Incorporate query filter params like contribution_amount[]&"1M and above"
     const corsProxy = "https://corsproxy.io/";
     const baseUrl = endpointUrl(route, params);
     const queryString = new URLSearchParams(params).toString();
@@ -65,11 +79,10 @@ const buildUrl = (route: string, params: Record<string,string>) => {
 This signature is saying get() returns a Container of type T,
 where T is one of the AnyElem union types.
 */
-export async function get<T extends AnyElem>(
+export async function get(
     route: string, 
-    schema: z.ZodType<T>,
     params: Record<string,string>
-): Promise<ContainerResponse<T>> {
+): Promise<ContainerResponse | MatchesResponse> {
     // TODO: Check that all callers properly try/catch Throws!
     const url = buildUrl(route, params);
     const response = await fetch(url, { method: "GET" });
@@ -77,24 +90,8 @@ export async function get<T extends AnyElem>(
         throw new Error(`HTTP error! Status: ${response.status}`);
     }
     const data = await response.json();
-    const parsed = containerSchemaFactory(schema).parse(data);
-    return parsed;
-}
-
-export async function getMatch<T extends MatchElem>(
-    // TODO: How to combine this with the get()
-    route: string, 
-    schema: z.ZodType<T>,
-    params: Record<string,string>
-): Promise<MatchesResponse<T>> {
-    // TODO: Check that all callers properly try/catch Throws!
-    const url = buildUrl(route, params);
-    const response = await fetch(url, { method: "GET" });
-    if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const data = await response.json();
-    const parsed = matchSchemaFactory(schema).parse(data);
+    const schema = endpointSchema(route);
+    const parsed = schema.parse(data);
     return parsed;
 }
 
