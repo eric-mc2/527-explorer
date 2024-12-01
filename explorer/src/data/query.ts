@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-import {ContainerResponse, ContainerResponseSchema,
-    MatchesResponse, MatchResponseSchema,
+import {type ContainerResponse, ContainerResponseSchema,
+    type MatchesResponse, MatchResponseSchema,
 } from './responseSchema.js';
 
 /* 

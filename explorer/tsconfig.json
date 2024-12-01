@@ -7,10 +7,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
-    // For handling complex generic types and factories.
-    "declaration": true, 
-    "declarationMap": true,
+    "outDir": "./dist",    
   },
   "include": [
     "src/**/*.ts",

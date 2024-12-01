@@ -1,10 +1,8 @@
 import { filter, map } from 'd3-array';
 import { Graph } from "./graphSchema";
 import { get } from "./query";
-import {ContributionsElem,
-    ExpendituresElem, OrganizationElem,
-    MatchesResponse,
-    ContainerResponse,
+import {type ContributionsElem, type ExpendituresElem, type OrganizationElem,
+    type MatchesResponse, type ContainerResponse,
 } from "./responseSchema";
 
 export const contribsToGraph = (contribs: ContributionsElem[]): Graph => {
