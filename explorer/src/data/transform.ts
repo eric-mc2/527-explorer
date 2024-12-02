@@ -1,9 +1,9 @@
 import { filter, map } from 'd3-array';
-import { Graph } from "./graphSchema";
-import { get } from "./query";
+import { Graph } from "./graphSchema.js";
+import { get } from "./query.js";
 import {type ContributionsElem, type ExpendituresElem, type OrganizationElem,
     type MatchesResponse, type ContainerResponse,
-} from "./responseSchema";
+} from "./responseSchema.js";
 
 export const contribsToGraph = (contribs: ContributionsElem[]): Graph => {
   const nonnull = filter(contribs, d => d.contributor)
@@ -27,6 +27,13 @@ export const orgsToGraph = (orgs: OrganizationElem[]): Graph => {
   const nodes = map(nonnull, d => ({id: d.ein, name: d.org_name, role: role}));
   return new Graph(nodes, []);
 };
+
+export const dataToGraph = (
+    orgs: OrganizationElem[], 
+    contribs: ContributionsElem[], 
+    expends: ExpendituresElem[]) => {
+    return orgsToGraph(orgs).union(contribsToGraph(contribs)).union(expendToGraph(expends));
+}
 
 export const walkOrg = async (org: OrganizationElem) => {
     const params = {id: org.id.toString(), search: '', ein: org?.ein.toString(), 
