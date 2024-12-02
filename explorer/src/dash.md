@@ -9,7 +9,8 @@ toc: false
 ```js
 import {text, card} from "npm:@observablehq/inputs";
 import {ForceGraph} from "./components/d3-force-graph.js";
-import {appSearch, appGraph} from "./dash.js";
+import {appSearch} from "./dash.js";
+import {walksToGraph} from "./data/transform.js";
 ```
 
 Search for orgs here:
@@ -22,7 +23,7 @@ const searchBox = view(Inputs.text({label: "Search:", submit: true}));
 // This executes on searchBox changes.
 const searchData = await appSearch(searchBox);
 const searchTbl = view(Inputs.table(searchData, {required: false}));
-const addGuard = {guard: false};
+let addGuard = {guard: false}; // Must be mutable. Doesn't work with var bool.
 ```
 
 ```js
@@ -57,15 +58,16 @@ if (addGuard.guard) {
 addGuard.guard = false;
 // It's ok to just re-render this table.
 const graphTbl = view(Inputs.table(graphData));
+const graph = await walksToGraph(graphData);
 ```
 
-<!-- // const graph = await appGraph(data);
-// const viz = ForceGraph(graph, {
-//     nodeId: (d) => d.id, // node identifier, to match links
-//     nodeGroup: (d) => d.role, // group identifier, for color
-//     nodeTitle: (d) => `${d.name} (${d.role})`, // hover text
-//     width: 500,
-//     height: 520,
-//     nodeStrength: -5,
-//     invalidation // stop when the cell is re-run
-// }); -->
+```js
+const viz = view(ForceGraph(graph, {
+    nodeId: (d) => d.id, // node identifier, to match links
+    nodeGroup: (d) => d.role, // group identifier, for color
+    nodeTitle: (d) => `${d.name} (${d.role})`, // hover text
+    width: 500,
+    height: 520,
+    nodeStrength: -5,
+    invalidation // stop when the cell is re-run
+}));

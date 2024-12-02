@@ -71,3 +71,12 @@ export const walkToGraph = async (org: OrganizationElem): Promise<Graph> => {
     const graph = orgGraph.union(contribGraph).union(expendGraph);
     return graph
 }
+
+export const walksToGraph = async (orgs: OrganizationElem[]): Promise<Graph> => {
+    const graphs = [new Graph()];
+    for (let org of orgs) {
+        graphs.push(await walkToGraph(org));
+    }
+    const graph = graphs.reduce((acc, val, _) => acc.union(val))
+    return graph;
+}
