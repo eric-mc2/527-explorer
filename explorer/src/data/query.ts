@@ -4,6 +4,7 @@ import {type ContainerResponse, type ContainerResponseData, ContainerResponseSch
 import Bottleneck from 'bottleneck';
 
 const MAX_PAGES = 10; 
+const PROXY_URL = "https://127.0.0.1:3001"
 
 /* 
 Nodes They only expose IDs for tax filer nodes. Even though they cluster the contributors and expenditures, they don't expose IDs for that. They model each line-item with an ID and expose the name/address properties that they do clustering on.
@@ -35,30 +36,29 @@ const isPagedRoute = (route: string): route is PagedRoute => {
 const endpointUrl = (route: Route, params: Record<string,string>) => {
     switch(route) {
       case "orgs/contributions":
-        return `https://projects.propublica.org/527-explorer/orgs/${params.id}/contribution_details`;
+        return `/orgs/${params.id}/contribution_details`;
       case "orgs/expenditures":
-        return `https://projects.propublica.org/527-explorer/orgs/${params.id}/expenditure_details`;
+        return `/orgs/${params.id}/expenditure_details`;
       case "match/expenditures":
-        return `https://projects.propublica.org/527-explorer/expenditures/${params.id}/data`;
+        return `/expenditures/${params.id}/data`;
       case "match/contributions":
-        return `https://projects.propublica.org/527-explorer/contributions/${params.id}/data`;
+        return `/contributions/${params.id}/data`;
       case "search/contributors":
-        return "https://projects.propublica.org/527-explorer/search/contributors_endpoint";
+        return "/search/contributors_endpoint";
       case "search/expenditures":
-        return "https://projects.propublica.org/527-explorer/search/recipients_endpoint";
+        return "/search/recipients_endpoint";
       case "search/orgs":
-        return "https://projects.propublica.org/527-explorer/search/orgs_endpoint";
+        return "/search/orgs_endpoint";
       default:
-        return "https://projects.propublica.org/527-explorer/search_options";
+        return "/search_options";
     }
 }
 
 const buildUrl = (route: Route, params: Record<string,string>) => {
     // TODO: Incorporate query filter params like contribution_amount[]&"1M and above"
-    const corsProxy = "https://corsproxy.io/";
     const baseUrl = endpointUrl(route, params);
     const queryString = new URLSearchParams(params).toString();
-    return `${corsProxy}?${baseUrl}?${queryString}`;
+    return `${PROXY_URL}${baseUrl}?${queryString}`;
 }
 
 const routeKinds = {
@@ -98,18 +98,18 @@ export async function get(
     route: Route, 
     params: Record<string,string>
 ): Promise<ContainerResponse | MatchesResponse> {
-    // TODO: Check that all callers properly try/catch Network Errors!
+    // TODO: START HERE: Harden to HTTP errors.
     const url = buildUrl(route, params);
     try {
-    const response = await fetch(url, { method: "GET" });
-    if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    let data = await response.json();
-    data = injectKind(route, data);
-    const schema = endpointSchema(route);
-    const parsed = schema.parse(data);
-    return parsed;
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        let data = await response.json();
+        data = injectKind(route, data);
+        const schema = endpointSchema(route);
+        const parsed = schema.parse(data);
+        return parsed;
     } catch (error) {
         console.log(error)
         throw new Error(`HTTP error! Status: 500`);
