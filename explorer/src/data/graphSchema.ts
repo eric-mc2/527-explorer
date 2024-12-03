@@ -47,4 +47,9 @@ export class Graph {
         const links = new Set([...this.links, ...other.links]);
         return new Graph([...nodes], [...links]);
     }
+
+    mutatingUnion(other: Graph) {
+        this.nodes.push(...other.nodes);
+        this.links.push(...other.links);
+    }
 }

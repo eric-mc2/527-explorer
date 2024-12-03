@@ -1,10 +1,24 @@
-import { get } from '../../src/data/query';
+import { get, getAll } from '../../src/data/query';
+import { ContainerResponse } from '../../src/data/responseSchema';
+
+// TODO: Add Jest config (or maybe actually singleton limiter) limit concurrent gets.
+// Also, just copy to clipboard and cache all testing data to files.
+// Just to make them unit tests instead of actually depending on the live system.
+// But more importantly to not get booted from API.
 
 test('search/exp', async () => {
     const params = {search:"Bloomberg", ein:"", order:"desc", mode:"date", page:"1"};
     const data = await get("search/expenditures", params);
     expect(data).toBeDefined();
     expect(data).toHaveProperty('data');
+});
+
+test('search/expAll', async () => {
+    const params = {search:"\"health care\"", ein:"", order:"desc", mode:"date", page:"1"};
+    const data = await getAll("search/expenditures", params) as ContainerResponse;
+    expect(data).toBeDefined();
+    expect(data).toHaveProperty('data');
+    expect(data.data).toHaveLength(data.count);
 });
 
 test('search/orgs', async () => {

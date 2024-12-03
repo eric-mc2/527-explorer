@@ -37,7 +37,7 @@ export const dataToGraph = (
 
 export const walkOrg = async (org: OrganizationElem) => {
     const params = {id: org.id.toString(), search: '', ein: org?.ein.toString(), 
-                    order: 'desc', mode: 'date', page: '1'};
+                    order: 'desc', mode: 'date', page: '0'};
     // TODO: These links are kinda like stubs 
     const contrib = await getAll("orgs/contributions", params);
     const expend = await getAll("orgs/expenditures", params);

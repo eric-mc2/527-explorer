@@ -1,6 +1,7 @@
 import {type ContainerResponse, type ContainerResponseData, ContainerResponseSchema,
     type MatchesResponse, MatchResponseSchema,
 } from './responseSchema.js';
+import Bottleneck from 'bottleneck';
 
 const MAX_PAGES = 10; 
 
@@ -99,6 +100,7 @@ export async function get(
 ): Promise<ContainerResponse | MatchesResponse> {
     // TODO: Check that all callers properly try/catch Network Errors!
     const url = buildUrl(route, params);
+    try {
     const response = await fetch(url, { method: "GET" });
     if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -108,22 +110,35 @@ export async function get(
     const schema = endpointSchema(route);
     const parsed = schema.parse(data);
     return parsed;
+    } catch (error) {
+        console.log(error)
+        throw new Error(`HTTP error! Status: 500`);
+    }
 }
+
 
 export async function getAll(
     route: Route, 
     params: Record<string,string>
 ): Promise<ContainerResponse | MatchesResponse> {
+    const limiter = new Bottleneck({
+        maxConcurrent: 1,
+        minTime: 500
+      });
+    const getLimited = limiter.wrap(get);
+    
+
     if (isPagedRoute(route)) {
         const response = await get(route, params) as ContainerResponse;
         let offset = response.data.length;
         let nextPageNum = parseInt(params.page || '0');
         // This and the next filter() are just a type guard. It wont actually filter.
         const responseData = response.data.filter(d => d.kind === routeKinds[route]);
-        while (offset <= response.count && nextPageNum < MAX_PAGES) {
+        
+        while (offset < response.count && nextPageNum < MAX_PAGES) {
             nextPageNum += 1;
             let nextParams = { ...params, page: nextPageNum.toString()};
-            let nextPage = await get(route, nextParams) as ContainerResponse;
+            let nextPage = await getLimited(route, nextParams) as ContainerResponse;
             offset += nextPage.data.length;
             const nextData = nextPage.data.filter(d => d.kind === routeKinds[route])
             responseData.push(...nextData);
