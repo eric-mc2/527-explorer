@@ -26,13 +26,13 @@ const searchBox = view(Inputs.text({label: "Search:", submit: true}));
 // This executes on searchBox changes.
 const searchData = await appSearch(searchBox);
 const searchTbl = view(Inputs.table(searchData, {required: false}));
-let addGuard = {guard: false}; // Must be mutable. Doesn't work with var bool.
+let guard = {fetch: false}; // Must be mutable. Doesn't work with var bool.
 ```
 
 ```js
 const addToGraph = view(Inputs.button(`Add to graph (${searchTbl.length}/${searchData.length})`,
     {disabled: searchTbl.length === 0,
-    reduce: () => {addGuard.guard = true}}
+    reduce: () => {guard.fetch = true}}
 ));
 ```
 
@@ -52,7 +52,7 @@ let graph = new Graph();
 ```js
  // This cell re-runs when addToGraph is clicked
 addToGraph;
-if (addGuard.guard) {
+if (guard.fetch) {
     // Prevents pushing data when search executes, page loads, or when
     // user selects (or de-selects) table elements.
     for (var i = 0; i < searchTbl.length; i++) {
@@ -60,19 +60,20 @@ if (addGuard.guard) {
         graph.mutatingUnion(await walkToGraph(searchTbl[i]));
     }
 }
-addGuard.guard = false;
-// It's ok to just re-render this table.
+guard.fetch = false;
+// It's ok to just re-render the table.
 const graphTbl = view(Inputs.table(graphData));
+const render = view(Inputs.button("Render viz (hack)"));
 ```
 
 ```js
-// This cell re-runs when addToGraph clicked.
+render;
 const viz = view(ForceGraph(graph, {
     nodeId: (d) => d.id, // node identifier, to match links
     nodeGroup: (d) => d.role, // group identifier, for color
     nodeTitle: (d) => `${d.name} (${d.role})`, // hover text
-    width: 500,
     height: 520,
     nodeStrength: -5, // Keep this < 0 or else things run off page.
     invalidation // stop when the cell is re-run
 }));
+```

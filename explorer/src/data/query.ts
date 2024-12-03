@@ -5,6 +5,7 @@ import Bottleneck from 'bottleneck';
 
 const MAX_PAGES = 10; 
 const PROXY_URL = "http://127.0.0.1:5000"
+const SLEEP = 100; // ms
 
 /* 
 Nodes They only expose IDs for tax filer nodes. Even though they cluster the contributors and expenditures, they don't expose IDs for that. They model each line-item with an ID and expose the name/address properties that they do clustering on.
@@ -123,7 +124,7 @@ export async function getAll(
 ): Promise<ContainerResponse | MatchesResponse> {
     const limiter = new Bottleneck({
         maxConcurrent: 1,
-        minTime: 500
+        minTime: SLEEP
       });
     const getLimited = limiter.wrap(get);
     
