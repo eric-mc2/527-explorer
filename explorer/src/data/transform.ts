@@ -1,6 +1,6 @@
 import { filter, map } from 'd3-array';
 import { Graph } from "./graphSchema.js";
-import { get } from "./query.js";
+import { get, getAll } from "./query.js";
 import {type ContributionsElem, type ExpendituresElem, type OrganizationElem,
     type MatchesResponse, type ContainerResponse,
 } from "./responseSchema.js";
@@ -39,8 +39,8 @@ export const walkOrg = async (org: OrganizationElem) => {
     const params = {id: org.id.toString(), search: '', ein: org?.ein.toString(), 
                     order: 'desc', mode: 'date', page: '1'};
     // TODO: These links are kinda like stubs 
-    const contrib = await get("orgs/contributions", params);
-    const expend = await get("orgs/expenditures", params);
+    const contrib = await getAll("orgs/contributions", params);
+    const expend = await getAll("orgs/expenditures", params);
     // TODO: For now dont convert to graphs yet bc we still have to follow links?
     const contribData = ((contrib as ContainerResponse).data as ContributionsElem[]);
     const expendData = ((expend as ContainerResponse).data as ExpendituresElem[]);
@@ -72,7 +72,7 @@ export const walkToGraph = async (org: OrganizationElem): Promise<Graph> => {
     return graph
 }
 
-export const walksToGraph = async (orgs: OrganizationElem[]): Promise<Graph> => {
+const walksToGraph = async (orgs: OrganizationElem[]): Promise<Graph> => {
     const graphs = [new Graph()];
     for (let org of orgs) {
         graphs.push(await walkToGraph(org));

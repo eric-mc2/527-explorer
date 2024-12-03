@@ -11,6 +11,7 @@ export type ContributionsElem = z.infer<typeof ContributionElemSchema>;
 export type ExpendituresElem = z.infer<typeof ExpenditureElemSchema>;
 export type OrganizationElem = z.infer<typeof OrganizationElemSchema>;
 export type ContainerResponse = z.infer<typeof ContainerResponseSchema>;
+export type ContainerResponseData = z.infer<typeof ContainerResponseElemsSchema>;
 
 export type ContributionMatchElem = z.infer<typeof ContributionMatchSchema>;
 export type ExpenditureMatchElem = z.infer<typeof ExpenditureMatchSchema>;
@@ -65,11 +66,14 @@ export const ExpenditureElemSchema = z.object({
     recipient: z.number().nullable(),
   })
   
+const ContainerResponseElemsSchema = z.union(
+    [z.array(ContributionElemSchema),
+    z.array(OrganizationElemSchema),
+    z.array(ExpenditureElemSchema)])
+
 export const ContainerResponseSchema = z.object({
     count: z.number(),
-    data: z.union([z.array(ContributionElemSchema),
-                z.array(OrganizationElemSchema),
-                z.array(ExpenditureElemSchema)])
+    data: ContainerResponseElemsSchema,
 });  
 
 export const ContributionMatchSchema = z.object({
