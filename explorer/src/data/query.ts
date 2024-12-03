@@ -4,7 +4,7 @@ import {type ContainerResponse, type ContainerResponseData, ContainerResponseSch
 import Bottleneck from 'bottleneck';
 
 const MAX_PAGES = 10; 
-const PROXY_URL = "https://127.0.0.1:3001"
+const PROXY_URL = "http://127.0.0.1:5000"
 
 /* 
 Nodes They only expose IDs for tax filer nodes. Even though they cluster the contributors and expenditures, they don't expose IDs for that. They model each line-item with an ID and expose the name/address properties that they do clustering on.
